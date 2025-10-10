@@ -1,0 +1,297 @@
+# AWS EKS Staging environment values
+environment: staging
+
+# ECR Image Pull Secret
+# You must create this secret before deploying:
+# kubectl create secret docker-registry ecr-pull-secret \
+#   --docker-server=283174975792.dkr.ecr.us-west-2.amazonaws.com \
+#   --docker-username=AWS \
+#   --docker-password=$(aws ecr get-login-password --region us-west-2) \
+#   -n summitlabs-staging
+imagePullSecrets:
+  - name: ecr-pull-secret
+
+# Tool Server Configuration
+toolServer:
+  replicaCount: 2
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/tool-server
+    pullPolicy: Always
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/eb84c55e-b5da-400c-a694-508dec57fa88
+      alb.ingress.kubernetes.io/tags: Environment=staging,ManagedBy=kubernetes,Service=tool-server
+    hosts:
+      - host: api-staging.agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: TAVILY_API_KEY
+    value: "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"
+  - name: DISABLE_AUTH
+    value: "true"
+
+# LangConnect Configuration
+langconnect:
+  replicaCount: 1
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/langconnect
+    pullPolicy: Always
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: ALLOW_ORIGINS
+    value: '["*"]'
+  - name: SUPABASE_URL
+    value: "http://host.docker.internal:54321"  # Update for AWS
+  - name: SUPABASE_KEY
+    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+
+# Web Frontend Configuration
+web:
+  replicaCount: 2
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/web
+    pullPolicy: Always
+    tag: "latest"
+
+  containerPort: 3000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/e9438ffa-3d2d-4757-94b0-3c5d2d5cbe89
+      alb.ingress.kubernetes.io/tags: Environment=staging,ManagedBy=kubernetes,Service=web
+    hosts:
+      - host: staging.agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: NEXT_PUBLIC_API_URL
+    value: "https://api-staging.agentstudioapp.com"
+  - name: NODE_ENV
+    value: "development"
+
+# PostgreSQL Configuration
+postgres:
+  image:
+    repository: pgvector/pgvector
+    tag: pg16
+    pullPolicy: IfNotPresent
+
+  auth:
+    username: postgres
+    password: postgres-staging  # Use AWS Secrets Manager in production
+    database: postgres
+
+  persistence:
+    enabled: true  # Use EBS volumes on AWS
+    storageClass: "gp3"  # AWS EBS gp3 storage class
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  podSecurityContext:
+    fsGroup: 999
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    runAsUser: 999
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations:
+    # For AWS IAM Roles for Service Accounts (IRSA):
+    # eks.amazonaws.com/role-arn: arn:aws:iam::283174975792:role/summitlabs-staging-role
+  name: ""
+
+nameOverride: ""
+fullnameOverride: ""

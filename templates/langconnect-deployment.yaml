@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "summitlabs.fullname" . }}-langconnect
+  labels:
+    {{- include "summitlabs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: langconnect
+spec:
+  {{- if not .Values.langconnect.autoscaling.enabled }}
+  replicas: {{ .Values.langconnect.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "summitlabs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: langconnect
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.langconnect.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "summitlabs.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: langconnect
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "summitlabs.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.langconnect.podSecurityContext | nindent 8 }}
+      containers:
+      - name: langconnect
+        securityContext:
+          {{- toYaml .Values.langconnect.securityContext | nindent 12 }}
+        image: "{{ .Values.langconnect.image.repository }}:{{ .Values.langconnect.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.langconnect.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: POSTGRES_HOST
+          value: {{ include "summitlabs.fullname" . }}-postgres
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          value: {{ .Values.postgres.auth.username | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "summitlabs.fullname" . }}-postgres-secret
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.auth.database | quote }}
+        - name: UV_CACHE_DIR
+          value: "/tmp/.uv-cache"
+        {{- with .Values.langconnect.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.langconnect.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.langconnect.livenessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.langconnect.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.langconnect.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.langconnect.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.langconnect.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.langconnect.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.langconnect.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.langconnect.readinessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.langconnect.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.langconnect.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.langconnect.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.langconnect.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.langconnect.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.langconnect.resources | nindent 12 }}
+      {{- with .Values.langconnect.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.langconnect.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.langconnect.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

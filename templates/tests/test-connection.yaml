@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "summitlabs.fullname" . }}-test-connection"
+  labels:
+    {{- include "summitlabs.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: test-tool-server
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "summitlabs.fullname" . }}-tool-server:{{ .Values.toolServer.service.port }}']
+  restartPolicy: Never

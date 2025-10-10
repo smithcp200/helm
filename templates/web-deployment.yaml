@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "summitlabs.fullname" . }}-web
+  labels:
+    {{- include "summitlabs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if not .Values.web.autoscaling.enabled }}
+  replicas: {{ .Values.web.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "summitlabs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      {{- with .Values.web.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "summitlabs.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "summitlabs.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.web.podSecurityContext | nindent 8 }}
+      containers:
+      - name: web
+        securityContext:
+          {{- toYaml .Values.web.securityContext | nindent 12 }}
+        image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.web.containerPort }}
+          protocol: TCP
+        env:
+        - name: TOOL_SERVER_URL
+          value: "http://{{ include "summitlabs.fullname" . }}-tool-server:{{ .Values.toolServer.service.port }}"
+        - name: LANGCONNECT_URL
+          value: "http://{{ include "summitlabs.fullname" . }}-langconnect:{{ .Values.langconnect.service.port }}"
+        {{- with .Values.web.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.web.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.web.livenessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.web.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.web.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.web.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.web.readinessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.web.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.web.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.web.resources | nindent 12 }}
+      {{- with .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

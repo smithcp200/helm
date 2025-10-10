@@ -1,0 +1,313 @@
+# AWS EKS Production environment values
+environment: prod
+
+# ECR Image Pull Secret
+imagePullSecrets:
+  - name: ecr-pull-secret
+
+# Tool Server Configuration
+toolServer:
+  replicaCount: 3
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/tool-server
+    pullPolicy: Always
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/4bbed62a-de49-4a01-a248-26a369176fb7
+      alb.ingress.kubernetes.io/tags: Environment=production,ManagedBy=kubernetes,Service=tool-server
+    hosts:
+      - host: api.agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  # Use AWS Secrets Manager or Kubernetes Secrets in production
+  - name: TAVILY_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: tool-server-secrets
+        key: tavily-api-key
+  - name: DISABLE_AUTH
+    value: "false"
+
+# LangConnect Configuration
+langconnect:
+  replicaCount: 2
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/langconnect
+    pullPolicy: Always
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: ALLOW_ORIGINS
+    value: '["https://summitlabs.io"]'  # Restrict to production domain
+  - name: SUPABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: langconnect-secrets
+        key: supabase-url
+  - name: SUPABASE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: langconnect-secrets
+        key: supabase-key
+
+# Web Frontend Configuration
+web:
+  replicaCount: 3
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/web
+    pullPolicy: Always
+    tag: "latest"
+
+  containerPort: 3000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/9bcd76de-f170-4074-ac33-af8e38ebb215
+      alb.ingress.kubernetes.io/tags: Environment=production,ManagedBy=kubernetes,Service=web
+    hosts:
+      - host: agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: NEXT_PUBLIC_API_URL
+    value: "https://api.agentstudioapp.com"
+  - name: NODE_ENV
+    value: "production"
+
+# PostgreSQL Configuration
+postgres:
+  image:
+    repository: pgvector/pgvector
+    tag: pg16
+    pullPolicy: IfNotPresent
+
+  auth:
+    username: postgres
+    password: CHANGE_ME_IN_PRODUCTION  # Use AWS Secrets Manager
+    database: postgres
+
+  persistence:
+    enabled: true
+    storageClass: "gp3"  # AWS EBS gp3
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  podSecurityContext:
+    fsGroup: 999
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    runAsUser: 999
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations:
+    # For AWS IAM Roles for Service Accounts (IRSA):
+    # eks.amazonaws.com/role-arn: arn:aws:iam::283174975792:role/summitlabs-prod-role
+  name: ""
+
+nameOverride: ""
+fullnameOverride: ""

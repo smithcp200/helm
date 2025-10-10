@@ -1,0 +1,317 @@
+# Production environment values
+environment: prod
+
+# Tool Server Configuration
+toolServer:
+  replicaCount: 3
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/tool-server
+    pullPolicy: Always  # For AWS ECR
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      # nginx.ingress.kubernetes.io/ssl-redirect: "true"  # Uncomment for production with TLS
+      # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment when using cert-manager
+    hosts:
+      - host: tool-server.prod.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: tool-server-prod-tls
+        hosts:
+          - tool-server.prod.local
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podAnnotations: {}
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health  # Use /health instead of /ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env: []
+  # - name: LOG_LEVEL
+  #   value: "info"
+  # - name: API_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: tool-server-secrets
+  #       key: api-key
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# LangConnect Configuration
+langconnect:
+  replicaCount: 2
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/langconnect
+    pullPolicy: Always  # For AWS ECR
+    tag: "latest"
+
+  service:
+    type: ClusterIP  # Internal only - not exposed externally
+    port: 8080
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podAnnotations: {}
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health  # Use /health instead of /ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: APP_SECRET
+    value: "CHANGE_ME_PRODUCTION_SECRET"  # ⚠️ MUST CHANGE IN PRODUCTION!
+  - name: TAVILY_API_KEY
+    value: "CHANGE_ME_PRODUCTION_TAVILY_KEY"  # ⚠️ MUST CHANGE IN PRODUCTION!
+  - name: DISABLE_AUTH
+    value: "false"  # Enable auth in production!
+  # - name: LOG_LEVEL
+  #   value: "info"
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Web Frontend Configuration
+web:
+  replicaCount: 3
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/web
+    pullPolicy: Always  # For AWS ECR
+    tag: "latest"
+
+  containerPort: 3000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: web.prod.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: web-prod-tls
+        hosts:
+          - web.prod.local
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: NEXT_PUBLIC_API_URL
+    value: "https://tool-server.prod.local"
+  - name: NODE_ENV
+    value: "production"
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# PostgreSQL Configuration (for langconnect)
+postgres:
+  image:
+    repository: pgvector/pgvector
+    tag: pg16
+    pullPolicy: IfNotPresent
+
+  auth:
+    username: postgres
+    password: CHANGE_ME_IN_PRODUCTION  # ⚠️ CHANGE THIS!
+    database: postgres
+
+  persistence:
+    enabled: true  # Persistent storage for production
+    storageClass: ""  # Use default storage class
+    accessMode: ReadWriteOnce
+    size: 20Gi  # Increased storage for production
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  podSecurityContext:
+    fsGroup: 999
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    runAsUser: 999
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""

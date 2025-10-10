@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "summitlabs.fullname" . }}-tool-server
+  labels:
+    {{- include "summitlabs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tool-server
+spec:
+  type: {{ .Values.toolServer.service.type }}
+  ports:
+  - port: {{ .Values.toolServer.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "summitlabs.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: tool-server

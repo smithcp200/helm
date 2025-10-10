@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(helm lint:*)",
+      "Bash(helm template:*)",
+      "Read(//Users/clintsmith/Development/langconnect/langconnect/**)",
+      "Bash(kubectl get pods:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(helm upgrade:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(kubectl exec:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

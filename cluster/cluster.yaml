@@ -1,0 +1,118 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: summitlabs-prod
+  region: us-west-2  # Change to your preferred region
+  version: "1.31"  # Latest stable EKS version
+
+# VPC configuration - eksctl will create a new VPC
+vpc:
+  cidr: 10.42.0.0/16
+  nat:
+    gateway: HighlyAvailable  # NAT gateway in each AZ for HA
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+# IAM configuration
+iam:
+  withOIDC: true  # Enable OIDC provider for IRSA (IAM Roles for Service Accounts)
+  serviceAccounts:
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+    - metadata:
+        name: external-dns
+        namespace: kube-system
+      wellKnownPolicies:
+        externalDNS: true
+    - metadata:
+        name: cert-manager
+        namespace: cert-manager
+      wellKnownPolicies:
+        certManager: true
+    - metadata:
+        name: cluster-autoscaler
+        namespace: kube-system
+      wellKnownPolicies:
+        autoScaler: true
+
+# Managed Node Groups
+managedNodeGroups:
+  - name: ng-general
+    instanceType: t3.medium
+    minSize: 2
+    maxSize: 6
+    desiredCapacity: 2
+    volumeSize: 30
+    volumeType: gp3
+    privateNetworking: true  # Nodes in private subnets
+    labels:
+      role: general
+      nodegroup-type: managed
+    tags:
+      Environment: production
+      ManagedBy: eksctl
+      Domain: agentstudioapp.com
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/summitlabs-prod: "owned"
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+        autoScaler: true
+        externalDNS: true
+        certManager: true
+        albIngress: true
+        ebs: true
+        efs: true
+        cloudWatch: true
+
+  # Optional: Spot instances for cost savings (non-critical workloads)
+  # - name: ng-spot
+  #   instanceTypes: ["t3.medium", "t3a.medium", "t2.medium"]
+  #   minSize: 0
+  #   maxSize: 4
+  #   desiredCapacity: 0
+  #   spot: true
+  #   privateNetworking: true
+  #   labels:
+  #     role: spot
+  #     nodegroup-type: spot
+  #   taints:
+  #     - key: spot
+  #       value: "true"
+  #       effect: NoSchedule
+
+# EKS Add-ons
+addons:
+  - name: vpc-cni
+    version: latest
+    configurationValues: |-
+      enableNetworkPolicy: "true"
+    podIdentityAssociations:
+      - serviceAccountName: aws-node
+        permissionPolicyARNs:
+          - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  - name: coredns
+    version: latest
+  - name: kube-proxy
+    version: latest
+  - name: aws-ebs-csi-driver
+    version: latest
+    podIdentityAssociations:
+      - serviceAccountName: ebs-csi-controller-sa
+        permissionPolicyARNs:
+          - arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+
+# CloudWatch logging
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+    logRetentionInDays: 7
+
+# Security
+#secretsEncryption:
+#  keyARN: ""  # Optional: Specify KMS key ARN for secrets encryption

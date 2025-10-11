@@ -13,7 +13,7 @@ imagePullSecrets:
 
 # Tool Server Configuration
 toolServer:
-  replicaCount: 2
+  replicaCount: 1
 
   image:
     repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/tool-server

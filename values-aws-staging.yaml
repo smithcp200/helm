@@ -37,7 +37,7 @@ toolServer:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/eb84c55e-b5da-400c-a694-508dec57fa88
       alb.ingress.kubernetes.io/tags: Environment=staging,ManagedBy=kubernetes,Service=tool-server
     hosts:
-      - host: api-staging.agentstudioapp.com
+      - host: tools-staging.agentstudioapp.com
         paths:
           - path: /
             pathType: Prefix
@@ -313,7 +313,7 @@ web:
   - name: NEXT_PUBLIC_LANGGRAPH_MODEL
     value: "openai"
   - name: NEXT_PUBLIC_API_URL
-    value: "https://api-staging.agentstudioapp.com"
+    value: "https://tools-staging.agentstudioapp.com"
   - name: NODE_ENV
     value: "development"
   - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY

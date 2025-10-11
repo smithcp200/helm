@@ -31,7 +31,7 @@ toolServer:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/4bbed62a-de49-4a01-a248-26a369176fb7
       alb.ingress.kubernetes.io/tags: Environment=production,ManagedBy=kubernetes,Service=tool-server
     hosts:
-      - host: api.agentstudioapp.com
+      - host: tools.agentstudioapp.com
         paths:
           - path: /
             pathType: Prefix
@@ -243,7 +243,7 @@ web:
 
   env:
   - name: NEXT_PUBLIC_API_URL
-    value: "https://api.agentstudioapp.com"
+    value: "https://tools.agentstudioapp.com"
   - name: NODE_ENV
     value: "production"
 

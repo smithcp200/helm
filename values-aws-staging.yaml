@@ -286,6 +286,8 @@ web:
     value: "https://iaeptedenfbzhocjolpv.supabase.co"
   - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
     value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhZXB0ZWRlbmZiemhvY2pvbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMTEzMDUsImV4cCI6MjA3MDc4NzMwNX0.7QtYTCTWRI624M7SFaAOVfVr3teRhkE75lMhPqikcLA"
+  - name: NEXT_PUBLIC_SUPABASE_PUBLIC_KEY
+    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhZXB0ZWRlbmZiemhvY2pvbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMTEzMDUsImV4cCI6MjA3MDc4NzMwNX0.7QtYTCTWRI624M7SFaAOVfVr3teRhkE75lMhPqikcLA"
   - name: EMAIL_SENDER
     value: "AgentStudio <smithcp200@gmail.com>"
   - name: EMAIL_PORT

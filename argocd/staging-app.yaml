@@ -9,7 +9,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/yourusername/summitlabs-gitops.git  # UPDATE THIS
+    repoURL: git@github.com:smithcp200/helm.git
     targetRevision: main
     path: .
     helm:

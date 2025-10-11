@@ -85,7 +85,10 @@ toolServer:
 
   env:
   - name: TAVILY_API_KEY
-    value: "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"
+    valueFrom:
+      secretKeyRef:
+        name: tool-server-secrets
+        key: TAVILY_API_KEY
   - name: DISABLE_AUTH
     value: "true"
 
@@ -144,12 +147,20 @@ langconnect:
     failureThreshold: 3
 
   env:
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: langconnect-secrets
+        key: OPENAI_API_KEY
   - name: ALLOW_ORIGINS
     value: '["*"]'
   - name: SUPABASE_URL
-    value: "http://host.docker.internal:54321"  # Update for AWS
+    value: "https://iaeptedenfbzhocjolpv.supabase.co"
   - name: SUPABASE_KEY
-    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+    valueFrom:
+      secretKeyRef:
+        name: langconnect-secrets
+        key: SUPABASE_KEY
 
 # Web Frontend Configuration
 web:
@@ -226,10 +237,126 @@ web:
     failureThreshold: 3
 
   env:
+  # Public/Non-sensitive variables
+  - name: NEXT_PUBLIC_SITE_URL
+    value: "https://staging.agentstudioapp.com"
+  - name: NEXT_PUBLIC_PRODUCT_NAME
+    value: "Agentstudio"
+  - name: NEXT_PUBLIC_SITE_TITLE
+    value: "Agent Studio - Your AI Experts"
+  - name: NEXT_PUBLIC_DEFAULT_THEME_MODE
+    value: "light"
+  - name: NEXT_PUBLIC_THEME_COLOR
+    value: "#ffffff"
+  - name: NEXT_PUBLIC_THEME_COLOR_DARK
+    value: "#0a0a0a"
+  - name: NEXT_PUBLIC_AUTH_PASSWORD
+    value: "true"
+  - name: NEXT_PUBLIC_AUTH_MAGIC_LINK
+    value: "false"
+  - name: NEXT_PUBLIC_CAPTCHA_SITE_KEY
+    value: ""
+  - name: NEXT_PUBLIC_BILLING_PROVIDER
+    value: "stripe"
+  - name: CMS_CLIENT
+    value: "keystatic"
+  - name: NEXT_PUBLIC_KEYSTATIC_CONTENT_PATH
+    value: "./content"
+  - name: NEXT_PUBLIC_LOCALES_PATH
+    value: "apps/web/public/locales"
+  - name: NEXT_PUBLIC_ENABLE_THEME_TOGGLE
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_PERSONAL_ACCOUNT_DELETION
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_PERSONAL_ACCOUNT_BILLING
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_TEAM_ACCOUNTS_DELETION
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_TEAM_ACCOUNTS_BILLING
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_TEAM_ACCOUNTS
+    value: "true"
+  - name: NEXT_PUBLIC_ENABLE_TEAM_ACCOUNTS_CREATION
+    value: "true"
+  - name: NEXT_PUBLIC_LANGUAGE_PRIORITY
+    value: "application"
+  - name: NEXT_TELEMETRY_DISABLED
+    value: "1"
+  - name: NEXT_PUBLIC_SUPABASE_URL
+    value: "https://iaeptedenfbzhocjolpv.supabase.co"
+  - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhZXB0ZWRlbmZiemhvY2pvbHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMTEzMDUsImV4cCI6MjA3MDc4NzMwNX0.7QtYTCTWRI624M7SFaAOVfVr3teRhkE75lMhPqikcLA"
+  - name: EMAIL_SENDER
+    value: "AgentStudio <smithcp200@gmail.com>"
+  - name: EMAIL_PORT
+    value: "54325"
+  - name: EMAIL_HOST
+    value: "localhost"
+  - name: EMAIL_TLS
+    value: "false"
+  - name: EMAIL_USER
+    value: "user"
+  - name: CONTACT_EMAIL
+    value: "test@makerkit.dev"
+  - name: MAILER_PROVIDER
+    value: "nodemailer"
+  - name: DEFAULT_AI_MODEL
+    value: "anthropic/claude-3.5-sonnet"
+  - name: LANGCONNECT_URL
+    value: "http://summitlabs-staging-langconnect:8080"
+  - name: NEXT_PUBLIC_LANGGRAPH_API_URL
+    value: "http://localhost:2024"
+  - name: NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID
+    value: "1330eb23-3a7a-4f4e-884f-f09b60c2c6f9"
+  - name: NEXT_PUBLIC_LANGGRAPH_MODEL
+    value: "openai"
   - name: NEXT_PUBLIC_API_URL
     value: "https://api-staging.agentstudioapp.com"
   - name: NODE_ENV
     value: "development"
+  - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    value: "pk_test_51MuLcqFLcOZkAjiBRVXGkVF5IOx17s2AHWHPV4c5m79iwlbnHl7OUcDL45f7XFJolcCgqAMaswFlL7Vx5y7IfqBH00BCkSa8tW"
+  # Sensitive variables from secrets
+  - name: SUPABASE_SERVICE_ROLE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: SUPABASE_SERVICE_ROLE_KEY
+  - name: SUPABASE_DB_WEBHOOK_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: SUPABASE_DB_WEBHOOK_SECRET
+  - name: EMAIL_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: EMAIL_PASSWORD
+  - name: STRIPE_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: STRIPE_SECRET_KEY
+  - name: STRIPE_WEBHOOK_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: STRIPE_WEBHOOK_SECRET
+  - name: OPENROUTER_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: OPENROUTER_API_KEY
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: OPENAI_API_KEY
+  - name: LANGCONNECT_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: web-secrets
+        key: LANGCONNECT_API_KEY
 
 # PostgreSQL Configuration
 postgres:

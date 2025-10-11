@@ -34,7 +34,7 @@ toolServer:
       alb.ingress.kubernetes.io/healthcheck-path: /health
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
       alb.ingress.kubernetes.io/ssl-redirect: '443'
-      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/eb84c55e-b5da-400c-a694-508dec57fa88
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/e9f8c588-c67f-42f6-8efd-d6323d7b5d88
       alb.ingress.kubernetes.io/tags: Environment=staging,ManagedBy=kubernetes,Service=tool-server
     hosts:
       - host: tools-staging.agentstudioapp.com

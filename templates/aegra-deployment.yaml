@@ -59,6 +59,13 @@ spec:
           {{- toYaml .Values.aegra.securityContext | nindent 12 }}
         image: "{{ .Values.aegra.image.repository }}:{{ .Values.aegra.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.aegra.image.pullPolicy }}
+        command:
+        - uvicorn
+        - src.agent_server.main:app
+        - --host
+        - "0.0.0.0"
+        - --port
+        - "8000"
         ports:
         - name: http
           containerPort: {{ .Values.aegra.containerPort | default 8000 }}

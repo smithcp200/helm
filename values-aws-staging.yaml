@@ -414,6 +414,147 @@ postgres:
     successThreshold: 1
     failureThreshold: 3
 
+# Redis Configuration
+redis:
+  replicaCount: 1
+
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 6379
+
+  persistence:
+    enabled: true
+    storageClass: "gp3"
+    accessMode: ReadWriteOnce
+    size: 5Gi
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Aegra Configuration
+aegra:
+  replicaCount: 1
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/aegra
+    pullPolicy: Always
+    tag: "latest"
+
+  containerPort: 8000
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/dce6d3e3-66fe-44dc-9800-ce23236b20cb
+      alb.ingress.kubernetes.io/tags: Environment=staging,ManagedBy=kubernetes,Service=aegra
+    hosts:
+      - host: langgraph-staging.agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: DATABASE_URL
+    value: "postgresql+asyncpg://postgres:postgres-staging@summitlabs-staging-postgres:5432/aegra"
+  - name: AUTH_TYPE
+    value: "noop"
+  - name: DEBUG
+    value: "true"
+  - name: PORT
+    value: "8000"
+  - name: REDIS_URL
+    value: "redis://summitlabs-staging-redis-0.summitlabs-staging-redis:6379"
+
 # Service Account
 serviceAccount:
   create: true

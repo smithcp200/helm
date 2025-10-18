@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "summitlabs.fullname" . }}-aegra
+  labels:
+    {{- include "summitlabs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: aegra
+spec:
+  {{- if not .Values.aegra.autoscaling.enabled }}
+  replicas: {{ .Values.aegra.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "summitlabs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: aegra
+  template:
+    metadata:
+      {{- with .Values.aegra.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "summitlabs.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: aegra
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "summitlabs.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.aegra.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: run-migrations
+        securityContext:
+          {{- toYaml .Values.aegra.securityContext | nindent 12 }}
+        image: "{{ .Values.aegra.image.repository }}:{{ .Values.aegra.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.aegra.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - |
+          echo 'Running database migrations...'
+          alembic upgrade head
+          echo 'Migrations complete!'
+        env:
+        {{- range .Values.aegra.env }}
+        - name: {{ .name }}
+          {{- if .value }}
+          value: {{ .value | quote }}
+          {{- else if .valueFrom }}
+          valueFrom:
+            {{- toYaml .valueFrom | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      containers:
+      - name: aegra
+        securityContext:
+          {{- toYaml .Values.aegra.securityContext | nindent 12 }}
+        image: "{{ .Values.aegra.image.repository }}:{{ .Values.aegra.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.aegra.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.aegra.containerPort | default 8000 }}
+          protocol: TCP
+        {{- if .Values.aegra.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.aegra.livenessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.aegra.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.aegra.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.aegra.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.aegra.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.aegra.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.aegra.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.aegra.readinessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.aegra.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.aegra.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.aegra.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.aegra.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.aegra.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.aegra.resources | nindent 12 }}
+        env:
+        {{- range .Values.aegra.env }}
+        - name: {{ .name }}
+          {{- if .value }}
+          value: {{ .value | quote }}
+          {{- else if .valueFrom }}
+          valueFrom:
+            {{- toYaml .valueFrom | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- with .Values.aegra.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.aegra.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.aegra.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

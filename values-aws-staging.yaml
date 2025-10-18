@@ -554,6 +554,10 @@ aegra:
     value: "8000"
   - name: REDIS_URL
     value: "redis://summitlabs-staging-redis-0.summitlabs-staging-redis:6379"
+  - name: TOOL_SERVER_API_KEY
+    value: "PLACEHOLDER"
+  - name: TOOL_SERVER_URL
+    value: "http://summitlabs-staging-tool-server:8000"
 
 # Service Account
 serviceAccount:

@@ -307,7 +307,7 @@ web:
   - name: LANGCONNECT_URL
     value: "http://summitlabs-staging-langconnect:8080"
   - name: NEXT_PUBLIC_LANGGRAPH_API_URL
-    value: "http://localhost:2024"
+    value: "http://summitlabs-staging-aegra:8000"
   - name: NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID
     value: "1330eb23-3a7a-4f4e-884f-f09b60c2c6f9"
   - name: NEXT_PUBLIC_LANGGRAPH_MODEL

@@ -558,6 +558,11 @@ aegra:
     value: "PLACEHOLDER"
   - name: TOOL_SERVER_URL
     value: "http://summitlabs-staging-tool-server:8000"
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegra-secrets
+        key: OPENAI_API_KEY
 
 # Service Account
 serviceAccount:

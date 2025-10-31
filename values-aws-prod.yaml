@@ -364,7 +364,7 @@ postgres:
 
   auth:
     username: postgres
-    password: CHANGE_ME_IN_PRODUCTION  # Use AWS Secrets Manager
+    password: postgres-prod
     database: postgres
 
   persistence:
@@ -540,7 +540,7 @@ aegra:
 
   env:
   - name: DATABASE_URL
-    value: "postgresql+asyncpg://postgres:CHANGE_ME_IN_PRODUCTION@summitlabs-prod-postgres:5432/aegra"
+    value: "postgresql+asyncpg://postgres:postgres-prod@summitlabs-prod-postgres:5432/aegra"
   - name: AUTH_TYPE
     value: "noop"
   - name: DEBUG

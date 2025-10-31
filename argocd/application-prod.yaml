@@ -17,14 +17,14 @@ spec:
   # Source configuration
   source:
     # Update this to your Git repository URL
-    repoURL: https://github.com/your-org/your-repo.git
+    repoURL: https://github.com/smithcp200/helm
     targetRevision: main  # or master, or a specific tag/branch
     path: .  # Path to the Helm chart
 
     helm:
       # Use production values file
       valueFiles:
-        - values-prod.yaml
+        - values-aws-prod.yaml
 
       # Optional: Override specific values
       # parameters:

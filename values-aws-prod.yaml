@@ -83,7 +83,7 @@ toolServer:
     valueFrom:
       secretKeyRef:
         name: tool-server-secrets
-        key: tavily-api-key
+        key: TAVILY_API_KEY
   - name: DISABLE_AUTH
     value: "false"
 
@@ -142,18 +142,20 @@ langconnect:
     failureThreshold: 3
 
   env:
-  - name: ALLOW_ORIGINS
-    value: '["https://summitlabs.io"]'  # Restrict to production domain
-  - name: SUPABASE_URL
+  - name: OPENAI_API_KEY
     valueFrom:
       secretKeyRef:
         name: langconnect-secrets
-        key: supabase-url
+        key: OPENAI_API_KEY
+  - name: ALLOW_ORIGINS
+    value: '["https://summitlabs.io"]'  # Restrict to production domain
+  - name: SUPABASE_URL
+    value: "https://iaeptedenfbzhocjolpv.supabase.co"
   - name: SUPABASE_KEY
     valueFrom:
       secretKeyRef:
         name: langconnect-secrets
-        key: supabase-key
+        key: SUPABASE_KEY
 
 # Web Frontend Configuration
 web:

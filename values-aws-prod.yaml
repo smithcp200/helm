@@ -7,7 +7,7 @@ imagePullSecrets:
 
 # Tool Server Configuration
 toolServer:
-  replicaCount: 3
+  replicaCount: 1
 
   image:
     repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/tool-server
@@ -38,18 +38,14 @@ toolServer:
 
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
       cpu: 500m
       memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
 
   autoscaling:
-    enabled: true
-    minReplicas: 3
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
+    enabled: false
 
   podSecurityContext:
     runAsNonRoot: true
@@ -93,7 +89,7 @@ toolServer:
 
 # LangConnect Configuration
 langconnect:
-  replicaCount: 2
+  replicaCount: 1
 
   image:
     repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/langconnect
@@ -109,15 +105,11 @@ langconnect:
       cpu: 500m
       memory: 512Mi
     requests:
-      cpu: 250m
+      cpu: 100m
       memory: 256Mi
 
   autoscaling:
-    enabled: true
-    minReplicas: 2
-    maxReplicas: 6
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
+    enabled: false
 
   podSecurityContext:
     runAsNonRoot: true
@@ -165,7 +157,7 @@ langconnect:
 
 # Web Frontend Configuration
 web:
-  replicaCount: 3
+  replicaCount: 1
 
   image:
     repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/web
@@ -198,18 +190,14 @@ web:
 
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
       cpu: 500m
       memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
 
   autoscaling:
-    enabled: true
-    minReplicas: 3
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
+    enabled: false
 
   podSecurityContext:
     runAsNonRoot: true
@@ -244,6 +232,8 @@ web:
   env:
   - name: NEXT_PUBLIC_API_URL
     value: "https://tools.agentstudioapp.com"
+  - name: NEXT_PUBLIC_LANGGRAPH_API_URL
+    value: "http://summitlabs-prod-aegra:8000"
   - name: NODE_ENV
     value: "production"
 
@@ -300,6 +290,156 @@ postgres:
     timeoutSeconds: 3
     successThreshold: 1
     failureThreshold: 3
+
+# Redis Configuration
+redis:
+  replicaCount: 1
+
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 6379
+
+  persistence:
+    enabled: true
+    storageClass: "gp3"
+    accessMode: ReadWriteOnce
+    size: 5Gi
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Aegra Configuration
+aegra:
+  replicaCount: 1
+
+  image:
+    repository: 283174975792.dkr.ecr.us-west-2.amazonaws.com/summitlabs/aegra
+    pullPolicy: Always
+    tag: "latest"
+
+  containerPort: 8000
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  ingress:
+    enabled: true
+    className: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:283174975792:certificate/0d774e5e-188d-4019-ab7a-0cdef2555c45
+      alb.ingress.kubernetes.io/tags: Environment=production,ManagedBy=kubernetes,Service=aegra
+    hosts:
+      - host: langgraph.agentstudioapp.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: false
+
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+  env:
+  - name: DATABASE_URL
+    value: "postgresql+asyncpg://postgres:CHANGE_ME_IN_PRODUCTION@summitlabs-prod-postgres:5432/aegra"
+  - name: AUTH_TYPE
+    value: "noop"
+  - name: DEBUG
+    value: "false"
+  - name: PORT
+    value: "8000"
+  - name: REDIS_URL
+    value: "redis://summitlabs-prod-redis-0.summitlabs-prod-redis:6379"
+  - name: TOOL_SERVER_API_KEY
+    value: "PLACEHOLDER"
+  - name: TOOL_SERVER_URL
+    value: "http://summitlabs-prod-tool-server:8000"
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: aegra-secrets
+        key: OPENAI_API_KEY
 
 # Service Account
 serviceAccount:

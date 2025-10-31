@@ -85,7 +85,7 @@ toolServer:
         name: tool-server-secrets
         key: TAVILY_API_KEY
   - name: DISABLE_AUTH
-    value: "false"
+    value: "true"
 
 # LangConnect Configuration
 langconnect:
